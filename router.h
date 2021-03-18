@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "label.h"
@@ -14,7 +15,8 @@ public:
   // Constructor builds an adjencey list representing the complete graph minus impossible to reach
   // nodes.
   Router(const std::array<row, 303> &network) : network_(network) {
-    graph_ = std::vector<std::vector<NodeID>>(network.size(), std::vector<NodeID>());
+    graph_ = std::vector<std::vector<std::pair<NodeID, Kilometers>>>(
+        network.size(), std::vector<std::pair<NodeID, Kilometers>>());
 
     // Created directed graph limited by battery radius.
     for (NodeID i = 0; i < network.size(); ++i) {
@@ -24,10 +26,13 @@ public:
         if (i == j) {
           exit(1);
         }
-        if (calculate_travel_km(i, j) <= MAX_CHARGE) {
-          graph_.at(i).push_back(j);
-          graph_.at(j).push_back(i);
+        Kilometers travel_dist = calculate_travel_km(i, j);
+        if (calculate_travel_km(i, j) > MAX_CHARGE) {
+          continue;
         }
+
+        graph_.at(i).emplace_back(std::make_pair(j, travel_dist));
+        graph_.at(j).emplace_back(std::make_pair(i, travel_dist));
       }
     }
   }
@@ -43,7 +48,7 @@ private:
 
   // Adjacency list representation of network. The network is a complete graph in theory, but
   // some edges can be pruned because not all connections are possible on a full charge.
-  std::vector<std::vector<NodeID>> graph_;
+  std::vector<std::vector<std::pair<NodeID, Kilometers>>> graph_;
 
   // Traverses the shortest path tree built by routing to create the result output.
   std::string build_result_string(const NodeToLabelMap &shortest_path_tree, NodeID source,

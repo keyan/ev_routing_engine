@@ -2,7 +2,6 @@
 #include <functional>
 #include <queue>
 #include <unordered_set>
-#include <utility>
 
 #include "router.h"
 
@@ -52,12 +51,14 @@ std::string Router::route(std::string source_name, std::string target_name) {
     // This is the main departure from standard dijkstra's. Instead of relaxing edges between
     // neighbors, we construct "labels" up to 3 per neighbor, and try to merge them into the
     // LabelMap. Any non-dominated labels are also added to the priority queue.
-    for (const NodeID &adj_node_id : graph_.at(curr_label_id)) {
+    for (auto &edge : graph_.at(curr_label_id)) {
+      const NodeID &adj_node_id = edge.first;
+      const Kilometers &dist_to_neighbor = edge.second;
+
       if (shortest_path_tree.count(adj_node_id) == 1) {
         continue;
       }
 
-      Kilometers dist_to_neighbor = calculate_travel_km(curr_label_id, adj_node_id);
       Weight direct_weight_to_neighbor = convert_km_to_ms_travel(dist_to_neighbor);
 
       // Three possible label cases.

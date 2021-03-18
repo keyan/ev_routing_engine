@@ -1,6 +1,6 @@
-#include <string.h>
 #include <ctime>
 #include <fstream>
+#include <string.h>
 
 #include "network.h"
 #include "router.h"
@@ -36,9 +36,11 @@ int main(int argc, char **argv) {
   }
 
   if (argc == 2 && strcmp(argv[1], "-r") == 0) {
-    file << "echo '# " << "Total search time: " << std::to_string(total_query_times)
+    file << "echo '# "
+         << "Total search time: " << std::to_string(total_query_times)
          << "ms - Average search time: " << std::to_string(total_query_times / double(run_count))
-         << "ms" << "'\n";
+         << "ms"
+         << "'\n";
   }
   file.close();
 
