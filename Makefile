@@ -13,3 +13,6 @@ test:
 	./run_checker.sh
 	rm ./write_checker_script
 	rm ./run_checker.sh
+
+format:
+	clang-format -i main.cpp router.cpp router.h utils.h test.cpp
