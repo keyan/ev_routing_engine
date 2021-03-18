@@ -10,10 +10,10 @@ using NodeID = uint16_t;
 using Weight = Milliseconds;
 
 struct Label {
-  Label(NodeID node_id, int counter, Weight total_weight, Weight charge_time,
-               Kilometers state_of_charge, NodeID parent)
+  Label(NodeID node_id, int label_id, Weight total_weight, Weight charge_time,
+        Kilometers state_of_charge, NodeID parent)
       : node_id(node_id)
-      , counter(counter)
+      , label_id(label_id)
       , total_weight(total_weight)
       , charge_time(charge_time)
       , state_of_charge(state_of_charge)
@@ -22,7 +22,7 @@ struct Label {
   // Non-unique between Labels, references the index into network_ where lat/lng/name info is stored.
   NodeID node_id;
   // A unique identifier (node_id is not unique) so deletes from pq can be tracked.
-  int counter;
+  int label_id;
   // Total travel time from the search source to this node.
   Weight total_weight;
   // The amount of time spent charging at the parent node.
@@ -40,23 +40,24 @@ struct Label {
     return total_weight > other.total_weight;
   }
 
-  // Returns true if this Label is better on both time and charge criteria.
-  bool dominates(const Label& other) {
+  // Returns true if this Label is better on both time and charge criteria over another.
+  bool dominates(const Label& other) const {
     return total_weight < other.total_weight && state_of_charge > other.state_of_charge;
   }
 
   // Debugging helper to show contents.
-  std::string to_string(std::string name) {
-    return "name: " + name + ", charge_time: " + std::to_string(charge_time) + ", SoC: " + std::to_string(state_of_charge);
+  std::string to_string() {
+    return (
+        "label_id: " + std::to_string(label_id) +
+        ", node_id: " + std::to_string(node_id) +
+        ", charge_time: " + std::to_string(charge_time) +
+        ", SoC: " + std::to_string(state_of_charge) +
+        ", weight: " + std::to_string(total_weight)
+    );
   }
 };
 
-using NodeMap = std::unordered_map<NodeID, Label>;
-
-// For each NodeID we keep a vector of "labels", which indicate multiple ways to
-// arrive to the same NodeID. All labels in the vector are non-dominating in respect
-// to total_weight and state_of_charge. That is, all labels are Pareto optimal.
-using LabelMap = std::unordered_map<NodeID, std::vector<Label> >;
+using NodeToLabelMap = std::unordered_map<NodeID, Label>;
 
 class Router {
   public:
@@ -92,7 +93,7 @@ class Router {
     std::vector<std::vector<NodeID> > graph_;
 
     // Traverses the shortest path tree built by routing to create the result output.
-    std::string build_result_string(const NodeMap& shortest_path_tree, NodeID source, NodeID target);
+    std::string build_result_string(const NodeToLabelMap& shortest_path_tree, NodeID source, NodeID target);
 
     Kilometers calculate_travel_km(NodeID, NodeID);
 };

@@ -2,7 +2,7 @@
 #include <math.h>
 
 using Kilometers = double;
-using Milliseconds = uint32_t;
+using Milliseconds = uint64_t;
 using KmPerHr = double;
 
 const double EARTH_RADIUS_KM = 6356.752;
