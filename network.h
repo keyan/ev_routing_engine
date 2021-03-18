@@ -1,20 +1,15 @@
-/*************************************************/
-/********* DO NOT MODIFY THIS FILE ************/
-/*************************************************/
 #pragma once
-#include <string>
 #include <iostream>
-#include <array>
+#include <string>
+#include <vector>
 
-struct row
-{
-    std::string name;
-    double lat;
-    double lon;
-    double rate;
+#include "utils.h"
+
+struct Station {
+  std::string name;
+  double lat;
+  double lon;
+  KmPerHr rate;
 };
 
-extern std::array<row, 303> network;
-/*************************************************/
-/********* DO NOT MODIFY THIS FILE ************/
-/*************************************************/
+extern std::vector<Station> network;

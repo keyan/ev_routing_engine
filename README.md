@@ -1,6 +1,11 @@
-# Tesla Routing Problem
+# electric vehicle routing engine
 
-This program finds a single-source-single-destination shortest path minimizing only for total time of travel.
+A limited implementation of road network routing for electric vehicles.
+
+## Background
+Electric vehicle routing is unique from standard road routing because there is a much smaller range that a vehicle can travel due to battery limitations. Furthermore the limited number of charging stations and the variability in the charging rates at those stations means that an optimal route must consider the state of the battery after traversing different arcs and routing decisions must include how much time to spend charging at each station.
+
+This program finds a single-source-single-destination shortest path minimizing total time of travel, considering both driving time and amount of time spent charging at each station where each station has a different charging rate. The network graph used is restricted to just charging stations so routing results ignore real road network ways.
 
 ## Building and Usage
 
@@ -9,6 +14,18 @@ To build run:
 ```
 make
 ```
+
+The binary can be executed by providing two location names from the `network.cpp` file:
+```
+./routing_engine <origin station> <destination station>
+```
+
+The output is in the format:
+```
+<origin station>, <station_1>, <hrs spent charging at station_1>, ..., <destination station>
+```
+
+## Tests and Benchmarking
 
 To build and execute a bash script which compares routing results to a reference implementation run:
 ```

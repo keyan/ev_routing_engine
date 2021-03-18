@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     std::clock_t end = std::clock();
     total_query_times += double(end - begin) / CLOCKS_PER_MS;
 
-    file << "./checker_linux "
+    file << "./reference_linux "
          << "\"" << result << "\"\n";
   }
 

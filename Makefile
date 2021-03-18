@@ -2,10 +2,9 @@ ALL_BINARIES = $(wildcard *.cpp)
 ALL_HEADERS = $(wildcard *.h)
 SOURCE_BINARIES = $(filter-out test.cpp, $(ALL_BINARIES))
 TEST_BINARIES = $(filter-out main.cpp, $(ALL_BINARIES))
-MY_FILES = $(filter-out network.cpp, $(ALL_BINARIES)) $(filter-out network.h, $(ALL_HEADERS))
 
 build:
-	g++ -std=c++11 -O1 $(SOURCE_BINARIES) -o candidate_solution
+	g++ -std=c++11 -O1 $(SOURCE_BINARIES) -o routing_engine
 
 build_test:
 	g++ -std=c++11 -O1 $(TEST_BINARIES) -o write_checker_script
@@ -27,9 +26,10 @@ bench: build_test
 	@make -s clean || true
 
 clean:
+	@rm -f ./routing_engine
 	@rm -f ./write_checker_script
 	@rm -f ./run_checker.sh
 	@rm -f *.log
 
 format:
-	clang-format -i $(MY_FILES)
+	clang-format -i $(ALL_BINARIES) $(ALL_HEADERS)

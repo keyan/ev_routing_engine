@@ -14,7 +14,7 @@ class Router {
 public:
   // Constructor builds an adjencey list representing the complete graph minus impossible to reach
   // nodes.
-  Router(const std::array<row, 303> &network) : network_(network) {
+  Router(const std::vector<Station> &network) : network_(network) {
     graph_ = std::vector<std::vector<std::pair<NodeID, Kilometers>>>(
         network.size(), std::vector<std::pair<NodeID, Kilometers>>());
 
@@ -42,7 +42,7 @@ public:
   std::string route(std::string source_name, std::string target_name);
 
 private:
-  const std::array<row, 303> &network_;
+  const std::vector<Station> &network_;
   // Maps a node's geographical string name to a NodeID.
   std::unordered_map<std::string, NodeID> node_name_map_;
 

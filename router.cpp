@@ -45,7 +45,7 @@ std::string Router::route(std::string source_name, std::string target_name) {
       break;
     }
 
-    const row &curr_row = network_.at(curr_label_id);
+    const Station &curr_station = network_.at(curr_label_id);
 
     // Update weights for all neighbors not in the spt.
     // This is the main departure from standard dijkstra's. Instead of relaxing edges between
@@ -71,7 +71,8 @@ std::string Router::route(std::string source_name, std::string target_name) {
       }
       // 2. Do a full recharge, if needed.
       if (curr_label.state_of_charge < MAX_CHARGE) {
-        Weight addtl_charge_time = time_to_full_charge(curr_label.state_of_charge, curr_row.rate);
+        Weight addtl_charge_time =
+            time_to_full_charge(curr_label.state_of_charge, curr_station.rate);
         labels.emplace_back(
             Label(adj_node_id, label_id++,
                   curr_label.total_weight + direct_weight_to_neighbor + addtl_charge_time,
@@ -81,7 +82,7 @@ std::string Router::route(std::string source_name, std::string target_name) {
       if (curr_label.state_of_charge < MAX_CHARGE &&
           curr_label.state_of_charge < dist_to_neighbor) {
         Weight addtl_charge_time =
-            time_to_partial_charge(curr_label.state_of_charge, dist_to_neighbor, curr_row.rate);
+            time_to_partial_charge(curr_label.state_of_charge, dist_to_neighbor, curr_station.rate);
         labels.emplace_back(
             Label(adj_node_id, label_id++,
                   curr_label.total_weight + direct_weight_to_neighbor + addtl_charge_time,
@@ -156,7 +157,7 @@ std::string Router::build_result_string(const NodeToLabelMap &shortest_path_tree
 }
 
 Kilometers Router::calculate_travel_km(NodeID source, NodeID dest) {
-  const row &source_row = network_.at(source);
-  const row &dest_row = network_.at(dest);
-  return haversine_dist(source_row.lat, source_row.lon, dest_row.lat, dest_row.lon);
+  const Station &source_station = network_.at(source);
+  const Station &dest_station = network_.at(dest);
+  return haversine_dist(source_station.lat, source_station.lon, dest_station.lat, dest_station.lon);
 }
