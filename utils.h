@@ -22,6 +22,7 @@ const int MS_IN_HOUR = 60 * MS_IN_MINUTE;
 inline double degree_to_radian(double angle) { return angle * M_PI / 180.0; }
 
 // Return the great-circle distance between two points in KM.
+// Adapted from: http://www.rosettacode.org/wiki/Haversine_formula#C.2B.2B
 inline Kilometers haversine_dist(double lat1, double lng1, double lat2, double lng2) {
   double lat_rad1 = degree_to_radian(lat1);
   double lng_rad1 = degree_to_radian(lng1);
