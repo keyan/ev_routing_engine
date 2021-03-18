@@ -10,9 +10,8 @@ using MinHeapPriorityQueue =
     std::priority_queue<Label, std::vector<Label>, std::greater<std::vector<Label>::value_type>>;
 
 std::string Router::route(std::string source_name, std::string target_name) {
-  // For each NodeID we keep a vector of "labels", which indicate multiple ways to
-  // arrive to the same NodeID. All labels in the vector are non-dominating in respect to
-  // total_weight and state_of_charge. That is, all labels for a node are Pareto optimal.
+  // All labels in the vector are non-dominating in respect to total_weight and state_of_charge.
+  // That is, all labels for a node are Pareto optimal.
   std::unordered_map<NodeID, std::vector<Label>> label_map;
   // Once a NodeID is added to the spt, we know the best Label to use to get to it.
   NodeToLabelMap shortest_path_tree;

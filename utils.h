@@ -1,10 +1,16 @@
 #pragma once
 #include <math.h>
 
+// Distance types
 using Kilometers = double;
 using Milliseconds = uint64_t;
 using KmPerHr = double;
 
+// Graph types
+using NodeID = uint16_t;
+using Weight = Milliseconds;
+
+// Constants from the spec
 const double EARTH_RADIUS_KM = 6356.752;
 const double ROAD_SPEED_KM_HR = 105;
 const Kilometers MAX_CHARGE = 320;
