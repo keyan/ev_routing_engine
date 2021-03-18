@@ -15,6 +15,11 @@ To build and execute a bash script which compares routing results to a reference
 make test
 ```
 
+A python helper script can be used to examine the reference implementation results for benchmarking (requires python3):
+```
+make bench
+```
+
 ## Approach
 
 I created an algorithmic approach based around a variant of Dijkstra's algorithm by using the observation that this problem resembles several similar path routing problems such as constrained shortest path and bicriteria shortest path.
