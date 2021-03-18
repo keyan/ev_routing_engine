@@ -1,27 +1,15 @@
-## Compilation flags
-# -g -> generate debug info
-# -Werror -> treat every warning as an error
-# G++ = g++ -g -std=c++17 -Werror
-
 ALL_BINARIES = $(wildcard *.cpp)
 SOURCE_BINARIES = $(filter-out test.cpp, $(ALL_BINARIES))
-
-# run: build
+TEST_BINARIES = $(filter-out main.cpp, $(ALL_BINARIES))
 
 build:
-	# $(G++) -o calc $(SOURCE_BINARIES) main.cpp
 	g++ -std=c++11 -O1 $(SOURCE_BINARIES) -o candidate_solution
 
-test: build
-	./candidate_solution Council_Bluffs_IA Cadillac_MI | xargs -I{} ./checker_osx {} || true
-
-# .PHONY: test
-# test: build
-# 	$(G++) -o test_calc $(SOURCE_BINARIES) test.cpp
-# 	./test_calc
-# 	@make clean
-
-# clean:
-# 	@rm calc &> /dev/null || true
-# 	@rm test_calc &> /dev/null || true
-# 	@rm -rf *.dSYM &> /dev/null || true
+# Executes routing a few hundred times and writes a bash script to run results against the checker.
+test:
+	g++ -std=c++11 -O1 $(TEST_BINARIES) -o write_checker_script
+	./write_checker_script
+	chmod 777 run_checker.sh
+	./run_checker.sh
+	rm ./write_checker_script
+	rm ./run_checker.sh

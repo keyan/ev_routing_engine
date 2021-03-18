@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdint>
-#include <limits>
 #include <vector>
 #include <unordered_map>
 
@@ -10,12 +9,9 @@
 using NodeID = uint16_t;
 using Weight = Milliseconds;
 
-constexpr NodeID MAX_NODE_ID = std::numeric_limits<NodeID>::max();
-constexpr Weight MAX_WEIGHT = std::numeric_limits<Weight>::max();
-
-struct WeightedNode {
-  WeightedNode(NodeID node_id, int counter, Weight total_weight, Weight charge_time,
-               Kilometers state_of_charge, NodeID parent = MAX_NODE_ID)
+struct Label {
+  Label(NodeID node_id, int counter, Weight total_weight, Weight charge_time,
+               Kilometers state_of_charge, NodeID parent)
       : node_id(node_id)
       , counter(counter)
       , total_weight(total_weight)
@@ -23,6 +19,7 @@ struct WeightedNode {
       , state_of_charge(state_of_charge)
       , parent(parent) {}
 
+  // Non-unique between Labels, references the index into network_ where lat/lng/name info is stored.
   NodeID node_id;
   // A unique identifier (node_id is not unique) so deletes from pq can be tracked.
   int counter;
@@ -32,18 +29,19 @@ struct WeightedNode {
   Weight charge_time;
   // The amount of charge remaining when arriving at this node.
   Kilometers state_of_charge;
+  // The node visited immediately prior.
   NodeID parent;
 
-  bool operator<(const WeightedNode& other) const {
+  bool operator<(const Label& other) const {
     return total_weight < other.total_weight;
   }
 
-  bool operator>(const WeightedNode& other) const {
+  bool operator>(const Label& other) const {
     return total_weight > other.total_weight;
   }
 
-  // Returns true if this WeightedNode is better on both time and charge criteria.
-  bool dominates(const WeightedNode& other) {
+  // Returns true if this Label is better on both time and charge criteria.
+  bool dominates(const Label& other) {
     return total_weight < other.total_weight && state_of_charge > other.state_of_charge;
   }
 
@@ -53,29 +51,25 @@ struct WeightedNode {
   }
 };
 
-using NodeMap = std::unordered_map<NodeID, WeightedNode>;
+using NodeMap = std::unordered_map<NodeID, Label>;
 
 // For each NodeID we keep a vector of "labels", which indicate multiple ways to
 // arrive to the same NodeID. All labels in the vector are non-dominating in respect
 // to total_weight and state_of_charge. That is, all labels are Pareto optimal.
-using LabelMap = std::unordered_map<NodeID, std::vector<WeightedNode> >;
+using LabelMap = std::unordered_map<NodeID, std::vector<Label> >;
 
 class Router {
   public:
-    Router(const std::vector<row>& network, std::string source_name, std::string target_name)
-      : network_(network) {
-      source_node_id_ = network_.size() - 1;
-      target_node_id_ = network_.size() - 1;
-
+    // Constructor builds an adjencey list representing the complete graph minus impossible to reach nodes.
+    Router(const std::array<row, 303>& network) : network_(network) {
       graph_ = std::vector<std::vector<NodeID> >(network.size(), std::vector<NodeID>());
 
       // Created directed graph limited by battery radius.
-      for (NodeID i = 0; i < network.size() - 1; ++i) {
-        // Find NodeID for source/target without building a map.
-        if (network_.at(i).name == source_name) { source_node_id_ = i; }
-        if (network_.at(i).name == target_name) { target_node_id_ = i; }
+      for (NodeID i = 0; i < network.size(); ++i) {
+        node_name_map_[network_.at(i).name] = i;
 
         for (NodeID j = i + 1; j < network.size(); ++j) {
+          if (i == j) { exit(1); }
           if (calculate_travel_km(i, j) <= MAX_CHARGE) {
             graph_.at(i).push_back(j);
             graph_.at(j).push_back(i);
@@ -84,22 +78,21 @@ class Router {
       }
     }
 
-    // Return a string result showing the route from the source and target provided
-    // to the Router() constructor.
-    std::string route();
+    // Runs a modified version of Dijkstra's similar to bicriteria Dijkstra's and returns
+    // a string result showing the route from the source and target provided.
+    std::string route(std::string source_name, std::string target_name);
 
   private:
-    const std::vector<row>& network_;
-    NodeID source_node_id_;
-    NodeID target_node_id_;
+    const std::array<row, 303>& network_;
+    // Maps a node's geographical string name to a NodeID.
+    std::unordered_map<std::string, NodeID> node_name_map_;
 
     // Adjacency list representation of network. The network is a complete graph in theory, but
     // some edges can be pruned because not all connections are possible on a full charge.
     std::vector<std::vector<NodeID> > graph_;
 
     // Traverses the shortest path tree built by routing to create the result output.
-    std::string build_result_string(const NodeMap& shortest_path_tree);
+    std::string build_result_string(const NodeMap& shortest_path_tree, NodeID source, NodeID target);
 
     Kilometers calculate_travel_km(NodeID, NodeID);
-    // Weight calculate_travel_secs(NodeID, NodeID);
 };

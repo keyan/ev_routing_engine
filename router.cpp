@@ -7,22 +7,25 @@
 #include "router.h"
 
 using MinHeapPriorityQueue = std::priority_queue<
-    WeightedNode,
-    std::vector<WeightedNode>,
-    std::greater<std::vector<WeightedNode>::value_type> >;
+    Label,
+    std::vector<Label>,
+    std::greater<std::vector<Label>::value_type> >;
 
-std::string Router::route() {
+std::string Router::route(std::string source_name, std::string target_name) {
   NodeMap shortest_path_tree;
   LabelMap label_map;
   std::unordered_set<int> deleted_labels;
 
-  int counter = 0;
-  MinHeapPriorityQueue node_queue;
-  node_queue.emplace(WeightedNode(source_node_id_, counter++, 0, 0, MAX_CHARGE));
+  NodeID source_node_id = node_name_map_[source_name];
+  NodeID target_node_id = node_name_map_[target_name];
 
-  while (!node_queue.empty()) {
-    WeightedNode curr_node = node_queue.top();
-    node_queue.pop();
+  int counter = 0;
+  MinHeapPriorityQueue label_queue;
+  label_queue.emplace(Label(source_node_id, counter++, 0, 0, MAX_CHARGE, source_node_id));
+
+  while (!label_queue.empty()) {
+    Label curr_node = label_queue.top();
+    label_queue.pop();
 
     const NodeID& curr_node_id = curr_node.node_id;
 
@@ -35,7 +38,7 @@ std::string Router::route() {
     shortest_path_tree.emplace(curr_node_id, curr_node);
 
     // Search is done.
-    if (curr_node_id == target_node_id_) {
+    if (curr_node_id == target_node_id) {
       break;
     }
 
@@ -54,11 +57,11 @@ std::string Router::route() {
       Weight direct_weight_to_neighbor = convert_km_to_ms_travel(dist_to_neighbor);
 
       // Three possible label cases.
-      std::vector<WeightedNode> labels;
+      std::vector<Label> labels;
       // 1. Go to neighbor without any charging, if possible.
       if (dist_to_neighbor <= curr_node.state_of_charge) {
         labels.emplace_back(
-            WeightedNode(
+            Label(
               adj_node_id, counter++, curr_node.total_weight + direct_weight_to_neighbor,
               // curr_node.charge_time, curr_node.state_of_charge - dist_to_neighbor, curr_node_id));
               0, curr_node.state_of_charge - dist_to_neighbor, curr_node_id));
@@ -67,7 +70,7 @@ std::string Router::route() {
       if (curr_node.state_of_charge < MAX_CHARGE) {
         Weight addtl_charge_time = time_to_full_charge(curr_node.state_of_charge, curr_row.rate);
         labels.emplace_back(
-            WeightedNode(
+            Label(
               adj_node_id, counter++, curr_node.total_weight + direct_weight_to_neighbor + addtl_charge_time,
               // curr_node.charge_time + addtl_charge_time, MAX_CHARGE - dist_to_neighbor, curr_node_id));
               addtl_charge_time, MAX_CHARGE - dist_to_neighbor, curr_node_id));
@@ -77,7 +80,7 @@ std::string Router::route() {
         Weight addtl_charge_time = time_to_partial_charge(
             curr_node.state_of_charge, dist_to_neighbor, curr_row.rate);
         labels.emplace_back(
-            WeightedNode(
+            Label(
               adj_node_id, counter++, curr_node.total_weight + direct_weight_to_neighbor + addtl_charge_time,
               // curr_node.charge_time + addtl_charge_time, 0, curr_node_id));
               addtl_charge_time, 0, curr_node_id));
@@ -87,7 +90,7 @@ std::string Router::route() {
       if (search == label_map.end()) {
         // No labels exist to dominate these ones, so add them all.
         for (auto label : labels) {
-          node_queue.push(label);
+          label_queue.push(label);
         }
         label_map[adj_node_id] = std::move(labels);
       } else {
@@ -103,24 +106,27 @@ std::string Router::route() {
     }
   }
 
-  return build_result_string(shortest_path_tree);
+  return build_result_string(shortest_path_tree, source_node_id, target_node_id);
 }
 
-std::string Router::build_result_string(const NodeMap& shortest_path_tree) {
+std::string Router::build_result_string(
+    const NodeMap& shortest_path_tree, NodeID source_node_id, NodeID target_node_id) {
   std::vector<std::string> names;
   std::vector<double> charge_times;
 
-  WeightedNode curr = shortest_path_tree.at(target_node_id_);
-  while (curr.node_id != source_node_id_) {
+  Label curr = shortest_path_tree.at(target_node_id);
+  while (curr.node_id != source_node_id) {
     names.push_back(network_.at(curr.node_id).name);
     charge_times.push_back(ms_to_hours(curr.charge_time));
     curr = shortest_path_tree.at(curr.parent);
   }
 
-  // The last charge time is how long we charged at the source, so 0.
+  // The last charge time is how long we charged at the source, always 0.
   charge_times.pop_back();
 
-  std::string result = network_.at(source_node_id_).name;
+  // Construct results in reverse because names/charge_times are currently
+  // kept in target -> source order, but spec asks for source -> target.
+  std::string result = network_.at(source_node_id).name;
   auto charge_it = charge_times.rbegin();
   for (auto name_it = names.rbegin(); name_it != names.rend(); ++name_it) {
     if (charge_it == charge_times.rend()) {
