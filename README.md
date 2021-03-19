@@ -51,7 +51,7 @@ To Perform a search, do a standard Dijkstra's except:
 - instead of pushing nodes/vertices into a priority queue as normal, we push a "Label"
 - "Labels" can be thought of as subdivisons of nodes in the graph, each node has a bag of labels representing every Pareto optimal way to reach that node from another node, including the resulting battery state would be if arriving at that node using that Label and how much charging time would be required at the parent node
 - Instead of "relaxing" edges as we do in Dijkstra's, we create a group of candidate Labels, then check if they can dominate or are dominated by any existing Labels in the bag of each neighboring node
-- Domination checking is neccesary because we care about both travel time and resulting battery state for each Label used
+- Domination checking is necessary because we care about both travel time and resulting battery state for each Label used
 - The search terminates as usual when the destination/target station is added to the shortest path tree
 
 A key simplifying point is that although battery state is continuous and therefore there are theoretically infinite possible labels, in this model we need only consider doing one of three actions when arriving at a charging station:

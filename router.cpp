@@ -29,29 +29,29 @@ std::string Router::route(std::string source_name, std::string target_name) {
     Label curr_label = label_queue.top();
     label_queue.pop();
 
-    const NodeID &curr_label_id = curr_label.node_id;
+    const NodeID &curr_node_id = curr_label.node_id;
 
     // std::priority_queue has no decrease-weight operation, instead do a "lazy
     // deletion" by keeping the old node in the pq and just ignoring it when it
     // is eventually popped.
     if (deleted_labels.count(curr_label.label_id) == 1 ||
-        shortest_path_tree.count(curr_label_id) == 1) {
+        shortest_path_tree.count(curr_node_id) == 1) {
       continue;
     }
-    shortest_path_tree.emplace(curr_label_id, curr_label);
+    shortest_path_tree.emplace(curr_node_id, curr_label);
 
     // Search is done.
-    if (curr_label_id == target_node_id) {
+    if (curr_node_id == target_node_id) {
       break;
     }
 
-    const Station &curr_station = network_.at(curr_label_id);
+    const Station &curr_station = network_.at(curr_node_id);
 
     // Update weights for all neighbors not in the spt.
     // This is the main departure from standard dijkstra's. Instead of relaxing edges between
     // neighbors, we construct "labels" up to 3 per neighbor, and try to merge them into the
     // LabelMap. Any non-dominated labels are also added to the priority queue.
-    for (auto &edge : graph_.at(curr_label_id)) {
+    for (auto &edge : graph_.at(curr_node_id)) {
       const NodeID &adj_node_id = edge.first;
       const Kilometers &dist_to_neighbor = edge.second;
 
@@ -67,7 +67,7 @@ std::string Router::route(std::string source_name, std::string target_name) {
       if (dist_to_neighbor <= curr_label.state_of_charge) {
         labels.emplace_back(Label(adj_node_id, label_id++,
                                   curr_label.total_weight + direct_weight_to_neighbor, 0,
-                                  curr_label.state_of_charge - dist_to_neighbor, curr_label_id));
+                                  curr_label.state_of_charge - dist_to_neighbor, curr_node_id));
       }
       // 2. Do a full recharge, if needed.
       if (curr_label.state_of_charge < MAX_CHARGE) {
@@ -76,7 +76,7 @@ std::string Router::route(std::string source_name, std::string target_name) {
         labels.emplace_back(
             Label(adj_node_id, label_id++,
                   curr_label.total_weight + direct_weight_to_neighbor + addtl_charge_time,
-                  addtl_charge_time, MAX_CHARGE - dist_to_neighbor, curr_label_id));
+                  addtl_charge_time, MAX_CHARGE - dist_to_neighbor, curr_node_id));
       }
       // 3. Only charge enough to get to neighbor.
       if (curr_label.state_of_charge < MAX_CHARGE &&
@@ -86,7 +86,7 @@ std::string Router::route(std::string source_name, std::string target_name) {
         labels.emplace_back(
             Label(adj_node_id, label_id++,
                   curr_label.total_weight + direct_weight_to_neighbor + addtl_charge_time,
-                  addtl_charge_time, 0, curr_label_id));
+                  addtl_charge_time, 0, curr_node_id));
       }
 
       // Update this nodes label bag. This is similar to "relaxing" edges in standard Dijkstra's.
